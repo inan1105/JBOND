@@ -1,4 +1,3 @@
-import React from 'react';
 import { formatPrice } from '@jbond/ui';
 
 interface Row {

@@ -1,4 +1,3 @@
-import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { YieldCurvePoint } from '@jbond/shared-types';
 

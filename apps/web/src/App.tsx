@@ -1,4 +1,3 @@
-import React from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { TopBar } from './components/TopBar.js';
 import { BottomNav } from './components/BottomNav.js';

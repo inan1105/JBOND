@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>제임스 본드 · 모바일 채권정보 웹앱 (UI 프리뷰)</title>
+<style>
+  :root {
+    --bg: #e7ebf2;
+    --panel: #ffffff;
+    --ink: #0b1020;
+    --ink-2: #1c2436;
+    --text: #10151f;
+    --muted: #6b7385;
+    --faint: #99a0b0;
+    --line: #eceef3;
+    --gold: #c9a227;
+    --up: #dc2626;    /* 금리상승/손실 */
+    --down: #2563eb;  /* 금리하락/가격 */
+    --good: #059669;
+    --amber: #b45309;
+    --amber-bg: #fef6e7;
+    --chip: #f1f3f8;
+    --stage: #cdd4e0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1017; --panel: #151a24; --text: #e7ebf3; --muted: #9aa2b4; --faint: #6b7385;
+      --line: #232a38; --chip: #1d2432; --stage: #0a0c12; --amber-bg: #2c220f; --amber: #e0b464;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1017; --panel: #151a24; --text: #e7ebf3; --muted: #9aa2b4; --faint: #6b7385;
+    --line: #232a38; --chip: #1d2432; --stage: #0a0c12; --amber-bg: #2c220f; --amber: #e0b464;
+  }
+  :root[data-theme="light"] {
+    --bg: #e7ebf2; --panel: #ffffff; --text: #10151f; --muted: #6b7385; --faint: #99a0b0;
+    --line: #eceef3; --chip: #f1f3f8; --stage: #cdd4e0; --amber-bg: #fef6e7; --amber: #b45309;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--stage); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple SD Gothic Neo",
+      "Malgun Gothic", "Noto Sans KR", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 24px 12px 60px;
+  }
+  .tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  .masthead { width: 100%; max-width: 900px; text-align: center; margin-bottom: 22px; }
+  .masthead h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; color: var(--text); }
+  .masthead h1 b { color: var(--gold); font-weight: 800; }
+  .masthead p { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .screen-tabs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
+  .screen-tabs button {
+    border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  }
+  .screen-tabs button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  :root[data-theme="dark"] .screen-tabs button.on { background: var(--gold); color: var(--ink); }
+
+  /* Phone frame */
+  .phone {
+    width: 390px; max-width: 100%; height: 800px; background: var(--bg);
+    border-radius: 42px; padding: 12px; box-shadow: 0 30px 70px -20px rgba(4,8,20,.55), 0 0 0 2px rgba(0,0,0,.15);
+    position: relative;
+  }
+  .phone::before {
+    content: ""; position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 26px; background: #05070d; border-radius: 0 0 16px 16px; z-index: 60;
+  }
+  .device {
+    width: 100%; height: 100%; background: var(--bg); border-radius: 32px; overflow: hidden;
+    display: flex; flex-direction: column; position: relative;
+  }
+
+  /* Top bar */
+  .topbar { background: var(--ink); color: #fff; padding: 30px 16px 10px; flex-shrink: 0; }
+  .topbar .row { display: flex; align-items: center; justify-content: space-between; }
+  .topbar h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  .topbar h2 b { color: var(--gold); }
+  .topbar .asof { font-size: 10px; color: #aab2c6; display: flex; align-items: center; gap: 5px; }
+  .topbar .asof i { width: 6px; height: 6px; border-radius: 50%; background: #34d399; display: inline-block; }
+  .search { margin-top: 10px; display: flex; gap: 6px; }
+  .search input {
+    flex: 1; background: rgba(255,255,255,.12); border: 0; border-radius: 10px; height: 38px;
+    padding: 0 12px; color: #fff; font-size: 13px;
+  }
+  .search input::placeholder { color: #8a92a6; }
+  .search button { background: var(--gold); color: var(--ink); border: 0; border-radius: 10px; padding: 0 14px; font-size: 13px; font-weight: 600; }
+
+  /* Viewport (scroll) */
+  .viewport { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px; -webkit-overflow-scrolling: touch; }
+  .viewport::-webkit-scrollbar { width: 0; }
+
+  /* Bottom nav */
+  .bottomnav { flex-shrink: 0; display: flex; background: var(--panel); border-top: 1px solid var(--line); }
+  .bottomnav button {
+    flex: 1; background: none; border: 0; padding: 8px 0 10px; font-size: 11px; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer;
+  }
+  .bottomnav button .ic { font-size: 17px; line-height: 1; filter: grayscale(1) opacity(.7); }
+  .bottomnav button.on { color: var(--gold); font-weight: 600; }
+  .bottomnav button.on .ic { filter: none; }
+
+  /* Cards & bits */
+  .card { background: var(--panel); border-radius: 14px; padding: 12px; box-shadow: 0 1px 0 rgba(0,0,0,.02); border: 1px solid var(--line); }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .stat .l { font-size: 10.5px; color: var(--muted); }
+  .stat .v { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .stat .v.big { font-size: 20px; }
+  .stat .s { font-size: 10px; color: var(--faint); margin-top: 2px; }
+  .stat .v.gold { color: var(--gold); } .stat .v.up { color: var(--up); } .stat .v.down { color: var(--down); }
+
+  .badge { display: inline-flex; align-items: center; border-radius: 5px; border: 1px solid; padding: 2px 6px; font-size: 9.5px; font-weight: 600; line-height: 1; }
+  .b-mtm { background: #fdf3dd; color: #92710f; border-color: #efd89a; }
+  .b-quote { background: #e6f1fb; color: #1e5fa8; border-color: #b9d6f0; }
+  .b-actual { background: #e4f6ee; color: #0a7a4e; border-color: #b7e6cf; }
+  .b-issue { background: #efe9fb; color: #6b46c1; border-color: #d6c9f2; }
+  .b-interp { background: var(--chip); color: var(--muted); border: 1px dashed var(--faint); }
+  .b-src { background: var(--chip); color: var(--muted); border-color: var(--line); }
+  :root[data-theme="dark"] .b-mtm{background:#3a2f11;color:#e8c568;border-color:#5c4a1c}
+  :root[data-theme="dark"] .b-quote{background:#132c44;color:#7db6ea;border-color:#20507a}
+  :root[data-theme="dark"] .b-actual{background:#0f3326;color:#4fcf98;border-color:#1c5c40}
+
+  .idcard h3 { margin: 0; font-size: 16px; font-weight: 800; }
+  .idmeta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; color: var(--muted); }
+  .star { font-size: 22px; color: var(--gold); background: none; border: 0; cursor: pointer; }
+
+  .acc { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .acc > summary { list-style: none; cursor: pointer; padding: 12px 14px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .acc > summary::-webkit-details-marker { display: none; }
+  .acc > summary::after { content: "▾"; color: var(--faint); transition: transform .2s; }
+  .acc[open] > summary::after { transform: rotate(180deg); }
+  .acc .body { padding: 0 14px 12px; border-top: 1px solid var(--line); font-size: 12.5px; }
+  .kv { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .kv:last-child { border-bottom: 0; }
+  .kv .k { color: var(--muted); } .kv .v { font-weight: 600; }
+
+  .btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn { height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  :root[data-theme="dark"] .btn.primary { background: var(--gold); color: var(--ink); }
+
+  .seg { display: flex; gap: 5px; }
+  .seg button { flex: 1; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 11.5px; cursor: pointer; }
+  .seg button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  :root[data-theme="dark"] .seg button.on { background: var(--gold); color: var(--ink); }
+
+  table.data { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  table.data th { color: var(--faint); font-weight: 500; text-align: right; padding: 4px 3px; }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data td { padding: 4px 3px; text-align: right; border-top: 1px solid var(--line); }
+
+  /* MTM sticky grid */
+  .mtmwrap { max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+  table.mtm { border-collapse: separate; border-spacing: 0; font-size: 11.5px; }
+  table.mtm th, table.mtm td { padding: 8px 9px; white-space: nowrap; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  table.mtm thead th { position: sticky; top: 0; z-index: 20; background: var(--chip); color: var(--muted); text-align: right; font-weight: 600; }
+  table.mtm thead th.corner { left: 0; z-index: 30; text-align: left; }
+  table.mtm tbody th { position: sticky; left: 0; z-index: 10; background: var(--panel); text-align: left; font-weight: 600; min-width: 92px; }
+  table.mtm td { text-align: right; }
+  table.mtm td .bp-up { color: var(--up); } table.mtm td .bp-dn { color: var(--down); }
+  table.mtm td.hl { background: var(--amber-bg); }
+  .miss { color: var(--faint); }
+
+  .note { font-size: 10px; color: var(--faint); text-align: center; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fallback { background: var(--amber-bg); color: var(--amber); border-radius: 8px; padding: 6px 8px; font-size: 10.5px; }
+
+  input[type=range] { width: 100%; accent-color: var(--gold); }
+  .theme-toggle { position: fixed; top: 14px; right: 16px; z-index: 100; background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 999px; padding: 7px 12px; font-size: 12px; cursor: pointer; }
+  svg { display: block; width: 100%; }
+</style>
+
+<button class="theme-toggle" id="themeBtn">◐ 테마</button>
+
+<div class="masthead">
+  <h1><b>James Bond</b> · 모바일 채권정보 웹앱</h1>
+  <p>PRD 기반 5개 화면 UI 프리뷰 — 실제 <b>bond-engine</b> 단가·투자성과 계산과 Mock 데이터로 동작합니다.<br/>
+     하단 탭 또는 위 버튼으로 화면을 전환하세요. 모든 값에 기준일·출처·실제/추정 배지를 표시합니다.</p>
+  <div class="screen-tabs" id="screenTabs"></div>
+</div>
+
+<div class="phone">
+  <div class="device">
+    <div class="topbar">
+      <div class="row">
+        <h2><b>James Bond</b> · <span id="tbTitle">발행정보</span></h2>
+        <div class="asof"><i></i> 기준 2026-07-23</div>
+      </div>
+      <div class="search">
+        <input placeholder="종목명 · 종목코드 · ISIN 검색" />
+        <button>검색</button>
+      </div>
+    </div>
+    <div class="viewport" id="viewport"></div>
+    <div class="bottomnav" id="bottomnav"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   bond-engine 포트 (순수 계산) — TS packages/bond-engine 대응
+   ============================================================ */
+const DAY = 86400000;
+function pd(iso){ const [y,m,d]=iso.split("-").map(Number); return Date.UTC(y,m-1,d); }
+function diffDays(a,b){ return Math.round((b-a)/DAY); }
+function isLeap(y){ return (y%4===0&&y%100!==0)||y%400===0; }
+function addMonths(t, months){
+  const d=new Date(t); const y=d.getUTCFullYear(), m=d.getUTCMonth(), day=d.getUTCDate();
+  const tg=new Date(Date.UTC(y,m+months,1));
+  const last=new Date(Date.UTC(tg.getUTCFullYear(),tg.getUTCMonth()+1,0)).getUTCDate();
+  tg.setUTCDate(Math.min(day,last)); return tg.getTime();
+}
+function yearFrac(a,b,dc){
+  if(b<=a) return 0;
+  if(dc==="ACT_360") return diffDays(a,b)/360;
+  if(dc==="ACT_ACT"){
+    let tot=0; const ya=new Date(a).getUTCFullYear(), yb=new Date(b).getUTCFullYear();
+    for(let y=ya;y<=yb;y++){ const s=Date.UTC(y,0,1), e=Date.UTC(y+1,0,1);
+      const ss=Math.max(a,s), ee=Math.min(b,e); if(ee<=ss) continue;
+      tot += diffDays(ss,ee)/(isLeap(y)?366:365); } return tot;
+  }
+  return diffDays(a,b)/365; // ACT_365 default
+}
+function trunc1(x){ return Math.trunc(Number((x*10).toPrecision(15)))/10; }
+
+function schedule(t){ // t: bond terms
+  const face=t.pricingFaceValue, prin=face*(t.redemptionRate/100);
+  const iss=pd(t.issueDate), mat=pd(t.maturityDate);
+  const life=yearFrac(iss,mat,t.dayCount), f=t.couponFrequency||1, cr=(t.couponRate||0)/100;
+  if(t.bondType==="DISCOUNT") return [{date:t.maturityDate, principal:prin, interest:0}];
+  if(t.bondType==="SIMPLE_COMPOUND") return [{date:t.maturityDate, principal:prin, interest:face*cr*life}];
+  if(t.bondType==="COMPOUND"){ const mv=face*Math.pow(1+cr/f, f*life); return [{date:t.maturityDate, principal:prin, interest:mv-face}]; }
+  // FIXED_COUPON
+  const mpp=12/f, coup=face*cr/f, dates=[]; let cur=mat;
+  while(cur>iss){ dates.push(cur); cur=addMonths(cur,-mpp); }
+  dates.reverse();
+  return dates.map(dt=>{ const iso=new Date(dt).toISOString().slice(0,10);
+    return {date:iso, principal: iso===t.maturityDate?prin:0, interest:coup}; });
+}
+function accrued(t, valIso){
+  if(t.bondType!=="FIXED_COUPON") return 0;
+  const f=t.couponFrequency||1, mpp=12/f, coup=t.pricingFaceValue*(t.couponRate/100)/f;
+  const val=pd(valIso), iss=pd(t.issueDate), mat=pd(t.maturityDate);
+  let next=mat, prev=addMonths(mat,-mpp);
+  while(prev>val && prev>iss){ next=prev; prev=addMonths(prev,-mpp); }
+  if(prev<iss) prev=iss; if(val<=prev) return 0;
+  const pf=yearFrac(prev,next,t.dayCount), af=yearFrac(prev,val,t.dayCount);
+  return pf<=0?0:coup*(af/pf);
+}
+function priceBond(t, valIso, yld){
+  const f=t.couponFrequency||1, y=yld/100, val=pd(valIso);
+  const cfs=schedule(t).filter(c=>pd(c.date)>val).map(c=>{
+    const tt=yearFrac(val,pd(c.date),t.dayCount), df=1/Math.pow(1+y/f, f*tt), total=c.principal+c.interest;
+    return {...c, t:tt, df, pv:total*df, total};
+  });
+  const dirtyRaw=cfs.reduce((s,c)=>s+c.pv,0);
+  const acc=trunc1(accrued(t,valIso)); const dirty=trunc1(dirtyRaw); const clean=trunc1(dirty-acc);
+  return { clean, dirty, accrued:acc, cfs, remainingDays:Math.max(0,diffDays(val,pd(t.maturityDate))) };
+}
+function simulate(t, aIso, aY, bIso, bY, qty, taxRate){
+  const A=priceBond(t,aIso,aY), B=priceBond(t,bIso,bY);
+  const a=pd(aIso), b=pd(bIso);
+  const income=schedule(t).filter(c=>pd(c.date)>a && pd(c.date)<=b).reduce((s,c)=>s+c.principal+c.interest,0)*qty;
+  const invest=A.dirty*qty, proceeds=B.dirty*qty;
+  const capital=(B.clean-A.clean)*qty;
+  const tax=Math.max(0, income*(taxRate/100));
+  const profit=income+capital-tax;
+  const tr=invest?profit/invest:0;
+  const hold=Math.max(1,diffDays(a,b));
+  const cagr=(invest>0&&invest+profit>0)?Math.pow((invest+profit)/invest,365/hold)-1:0;
+  return {A,B,invest,proceeds,income,capital,tax,profit,tr,cagr,hold};
+}
+function sensitivity(t,aIso,aY,bIso,bY,qty,taxRate){
+  return [-100,-75,-50,-25,0,25,50,75,100].map(bp=>{
+    const r=simulate(t,aIso,aY,bIso,bY+bp/100,qty,taxRate);
+    return {bp, y:bY+bp/100, clean:r.B.clean, capital:r.capital, tr:r.tr*100, cagr:r.cagr*100};
+  });
+}
+
+/* ============================================================
+   Mock 데이터 (apps/web/src/data/mock.ts 대응)
+   ============================================================ */
+const AS_OF="2026-07-23";
+const MASTERS=[
+  {id:"KR103501GA34",isin:"KR103501GA34",code:"국고03500-3403",name:"국고채권 03500-3403(24-2)",cat:"국채",rating:"AAA"},
+  {id:"KR6000CORPAA",isin:"KR6000CORPAA",code:"회사AA0-2701",name:"(주)본드전자 12 회사채",cat:"회사채",rating:"AA0"},
+  {id:"KR2000MONE01",isin:"KR2000MONE01",code:"통안0250-2601",name:"통화안정증권 02500-2601",cat:"통안채",rating:"AAA"},
+  {id:"KR3000COMPD1",isin:"KR3000COMPD1",code:"지역개발복리-2901",name:"지역개발채권(복리) 03000-2901",cat:"지방채",rating:"AA+"},
+  {id:"KR4000SIMPLE",isin:"KR4000SIMPLE",code:"금융단리-2801",name:"본드은행 단리채 04000-2801",cat:"은행채",rating:"AAA"},
+];
+const TERMS={
+  KR103501GA34:{bondId:"KR103501GA34",typeLabel:"고정금리 이표채",pricingFaceValue:10000,currency:"KRW",issueDate:"2024-03-10",maturityDate:"2034-03-10",bondType:"FIXED_COUPON",couponRate:3.5,issueYield:3.52,couponFrequency:2,dayCount:"ACT_365",redemptionType:"BULLET",redemptionRate:100,pay:"후급",issuer:"대한민국정부"},
+  KR6000CORPAA:{bondId:"KR6000CORPAA",typeLabel:"고정금리 이표채",pricingFaceValue:10000,currency:"KRW",issueDate:"2024-07-01",maturityDate:"2027-07-01",bondType:"FIXED_COUPON",couponRate:4.2,issueYield:4.25,couponFrequency:4,dayCount:"ACT_365",redemptionType:"BULLET",redemptionRate:100,pay:"후급",issuer:"본드전자"},
+  KR2000MONE01:{bondId:"KR2000MONE01",typeLabel:"할인채",pricingFaceValue:10000,currency:"KRW",issueDate:"2025-01-15",maturityDate:"2026-01-15",bondType:"DISCOUNT",couponRate:null,issueYield:2.9,couponFrequency:1,dayCount:"ACT_365",redemptionType:"BULLET",redemptionRate:100,pay:"만기일시",issuer:"한국은행"},
+  KR3000COMPD1:{bondId:"KR3000COMPD1",typeLabel:"복리채",pricingFaceValue:10000,currency:"KRW",issueDate:"2024-01-02",maturityDate:"2029-01-02",bondType:"COMPOUND",couponRate:3.0,issueYield:3.0,couponFrequency:1,dayCount:"ACT_365",redemptionType:"BULLET",redemptionRate:100,pay:"만기일시",issuer:"서울특별시"},
+  KR4000SIMPLE:{bondId:"KR4000SIMPLE",typeLabel:"단리채",pricingFaceValue:10000,currency:"KRW",issueDate:"2024-01-02",maturityDate:"2028-01-02",bondType:"SIMPLE_COMPOUND",couponRate:3.8,issueYield:3.8,couponFrequency:1,dayCount:"ACT_365",redemptionType:"BULLET",redemptionRate:100,pay:"만기일시",issuer:"본드은행"},
+};
+function seeded(seed){ let s=seed%2147483647; if(s<=0)s+=2147483646; return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+function observations(id, days){
+  const t=TERMS[id]; const base=t.issueYield||t.couponRate||3;
+  const rnd=seeded([...id].reduce((a,c)=>a+c.charCodeAt(0),0)); const out=[]; let y=base;
+  const to=pd(AS_OF), from=to-days*DAY;
+  for(let tt=from; tt<=to; tt+=DAY){ const d=new Date(tt), dow=d.getUTCDay(); if(dow===0||dow===6) continue;
+    y+=(rnd()-.5)*.04; y=Math.max(.5,y); const iso=d.toISOString().slice(0,10);
+    const hasTrade=rnd()>.55; const p=priceBond(t,iso,Number(y.toFixed(3)));
+    out.push({date:iso, yield:Number(y.toFixed(3)), clean:p.clean, vol:hasTrade?Math.round(rnd()*5000)*100:null}); }
+  return out;
+}
+const CURVES={
+  GOVERNMENT:{label:"국채",base:2.9,slope:.9,rating:null},
+  MONETARY:{label:"통안채",base:2.85,slope:.5,rating:null},
+  LOCAL:{label:"지방채",base:3.1,slope:.95,rating:"AA+"},
+  BANK:{label:"은행채 AAA",base:3.25,slope:.9,rating:"AAA"},
+  CORPORATE_AA0:{label:"회사채 AA0",base:3.6,slope:1.0,rating:"AA0"},
+  CORPORATE_A0:{label:"회사채 A0",base:4.4,slope:1.15,rating:"A0"},
+  CORPORATE_BBB:{label:"회사채 BBB",base:6.5,slope:1.4,rating:"BBB"},
+};
+const CT=[{l:"3M",y:.25},{l:"6M",y:.5},{l:"1Y",y:1},{l:"2Y",y:2},{l:"3Y",y:3},{l:"5Y",y:5},{l:"10Y",y:10},{l:"20Y",y:20},{l:"30Y",y:30}];
+function curve(cid, dateShiftDays){
+  const c=CURVES[cid]||CURVES.GOVERNMENT;
+  const rnd=seeded([...cid].reduce((a,x)=>a+x.charCodeAt(0),0)+dateShiftDays);
+  return CT.map((tn,i)=>{ const missing=(tn.l==="2Y"&&cid.startsWith("CORPORATE"));
+    const drift=dateShiftDays*0.0009;
+    const y=c.base+c.slope*Math.log1p(tn.y)*.6+(rnd()-.5)*.05 - drift;
+    return {l:tn.l, y:tn.y, yield:missing?null:Number(y.toFixed(3)), interp:missing}; });
+}
+const MTM_ROWS=[
+  {k:"GOV",l:"국고채",b:2.9,s:.9,q:1},{k:"MSB",l:"통안채",b:2.85,s:.5,q:1},
+  {k:"LOCAL",l:"지방채",b:3.1,s:.95},{k:"SPECIAL",l:"특수채 AAA",b:3.15,s:.95},
+  {k:"BANK",l:"은행채 AAA",b:3.25,s:.9},{k:"FIN",l:"금융채 AA",b:3.45,s:.95},
+  {k:"CARD",l:"카드채 AA",b:3.55,s:1.0},{k:"CAP",l:"캐피탈채 AA",b:3.7,s:1.05},
+  {k:"CAAA",l:"회사채 AAA",b:3.4,s:1.0},{k:"CAAp",l:"회사채 AA+",b:3.5,s:1.0},
+  {k:"CAA0",l:"회사채 AA0",b:3.6,s:1.0},{k:"CAAm",l:"회사채 AA-",b:3.75,s:1.05},
+  {k:"CAp",l:"회사채 A+",b:4.1,s:1.1},{k:"CA0",l:"회사채 A0",b:4.4,s:1.15},
+  {k:"CAm",l:"회사채 A-",b:4.8,s:1.2},{k:"CBBB",l:"회사채 BBB",b:6.5,s:1.4},
+];
+const MTM_T=[{l:"3M",y:.25},{l:"6M",y:.5},{l:"1Y",y:1},{l:"3Y",y:3},{l:"5Y",y:5},{l:"10Y",y:10},{l:"30Y",y:30}];
+function mtm(){
+  const rnd=seeded(99); const grid={};
+  for(const r of MTM_ROWS){ grid[r.k]={};
+    for(const tn of MTM_T){ const missing=(r.k==="MSB"&&tn.l==="30Y");
+      const y=r.b+r.s*Math.log1p(tn.y)*.6+(rnd()-.5)*.04; const change=(rnd()-.5)*12;
+      const vt=(r.k==="GOV"||r.k==="MSB")?"quote":(rnd()>.5?"mtm":"quote");
+      grid[r.k][tn.l]= missing?{miss:true}:{yield:Number(y.toFixed(3)),bp:Number(change.toFixed(1)),vt}; } }
+  return grid;
+}
+
+/* ============================================================
+   포맷 & 배지
+   ============================================================ */
+const fY=v=> v==null?"—":v.toFixed(3)+"%";
+const fP=(v,d=1)=> v==null?"—":v.toLocaleString("ko-KR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const fM=v=> v==null?"—":Math.round(v).toLocaleString("ko-KR");
+const fBp=v=> v==null?"—":(v>0?"▲ ":v<0?"▼ ":"")+Math.abs(v).toFixed(1)+"bp";
+function fRem(days){ if(days==null||days<0)return"—"; const y=Math.floor(days/365),m=Math.floor(days%365/30); return y>0?`${y}년 ${m}개월`:`${m}개월`; }
+const BADGE={mtm:["b-mtm","시가평가"],quote:["b-quote","최종호가"],actual:["b-actual","실거래"],issue:["b-issue","발행"],interp:["b-interp","보간"],user:["b-user","사용자"]};
+function badge(kind){ const b=BADGE[kind]||["b-src",kind]; return `<span class="badge ${b[0]}">${b[1]}</span>`; }
+
+/* ============================================================
+   상태
+   ============================================================ */
+const state={ screen:"issue", bondId:"KR103501GA34", period:180, curveId:"GOVERNMENT", curveMode:"current", curveCompare:30, mtmBp:false, simB:null, watched:{} };
+
+/* ============================================================
+   SVG 차트
+   ============================================================ */
+function lineChart(obs){
+  const W=350,H=180,pl=38,pr=38,pt=14,pb=22;
+  const ys=obs.map(o=>o.yield), ps=obs.map(o=>o.clean);
+  const ymin=Math.min(...ys),ymax=Math.max(...ys),pmin=Math.min(...ps),pmax=Math.max(...ps);
+  const xat=i=> pl+(W-pl-pr)*i/(obs.length-1);
+  const yY=v=> pt+(H-pt-pb)*(1-(v-ymin)/((ymax-ymin)||1));
+  const yP=v=> pt+(H-pt-pb)*(1-(v-pmin)/((pmax-pmin)||1));
+  const dY=obs.map((o,i)=>`${i?"L":"M"}${xat(i).toFixed(1)},${yY(o.yield).toFixed(1)}`).join("");
+  const dP=obs.map((o,i)=>`${i?"L":"M"}${xat(i).toFixed(1)},${yP(o.clean).toFixed(1)}`).join("");
+  const bars=obs.map((o,i)=> o.vol?`<rect x="${(xat(i)-1).toFixed(1)}" y="${(H-pb-(o.vol/600000)*22).toFixed(1)}" width="2" height="${((o.vol/600000)*22).toFixed(1)}" fill="var(--faint)" opacity=".5"/>`:"").join("");
+  const last=obs[obs.length-1];
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="수익률·가격 추이">
+    ${bars}
+    <path d="${dP}" fill="none" stroke="var(--down)" stroke-width="1.6"/>
+    <path d="${dY}" fill="none" stroke="var(--up)" stroke-width="1.6"/>
+    <circle cx="${xat(obs.length-1).toFixed(1)}" cy="${yY(last.yield).toFixed(1)}" r="3" fill="var(--up)"/>
+    <circle cx="${xat(obs.length-1).toFixed(1)}" cy="${yP(last.clean).toFixed(1)}" r="3" fill="var(--down)"/>
+    <text x="${pl}" y="10" font-size="8" fill="var(--up)">수익률 ${fY(last.yield)}</text>
+    <text x="${W-pr}" y="10" font-size="8" fill="var(--down)" text-anchor="end">단가 ${fP(last.clean)}</text>
+  </svg>`;
+}
+function curveChart(series){
+  const W=350,H=190,pl=36,pr=14,pt=16,pb=26;
+  const all=series.flatMap(s=>s.pts.map(p=>p.yield).filter(v=>v!=null));
+  const ymin=Math.min(...all),ymax=Math.max(...all);
+  const xs=CT, xat=i=> pl+(W-pl-pr)*i/(xs.length-1);
+  const yv=v=> pt+(H-pt-pb)*(1-(v-ymin)/((ymax-ymin)||1));
+  let out=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="수익률곡선">`;
+  // grid
+  for(let g=0;g<=4;g++){ const yy=pt+(H-pt-pb)*g/4; out+=`<line x1="${pl}" y1="${yy}" x2="${W-pr}" y2="${yy}" stroke="var(--line)" stroke-width="1"/>`; }
+  xs.forEach((t,i)=> out+=`<text x="${xat(i)}" y="${H-8}" font-size="8" fill="var(--faint)" text-anchor="middle">${t.l}</text>`);
+  out+=`<text x="6" y="${pt+6}" font-size="8" fill="var(--faint)">${ymax.toFixed(2)}</text><text x="6" y="${H-pb}" font-size="8" fill="var(--faint)">${ymin.toFixed(2)}</text>`;
+  for(const s of series){
+    let d="",segStart=true;
+    s.pts.forEach((p,i)=>{ if(p.yield==null){segStart=true;return;} d+=`${segStart?"M":"L"}${xat(i).toFixed(1)},${yv(p.yield).toFixed(1)}`; segStart=false; });
+    out+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" ${s.dash?'stroke-dasharray="4 3"':""}/>`;
+    s.pts.forEach((p,i)=>{ if(p.yield==null){ out+=`<text x="${xat(i)}" y="${H-pb-2}" font-size="9" fill="var(--faint)" text-anchor="middle">—</text>`; return; }
+      out+= p.interp
+        ? `<circle cx="${xat(i).toFixed(1)}" cy="${yv(p.yield).toFixed(1)}" r="3.2" fill="var(--panel)" stroke="${s.color}" stroke-width="1.5"/>`
+        : `<circle cx="${xat(i).toFixed(1)}" cy="${yv(p.yield).toFixed(1)}" r="3" fill="${s.color}"/>`; });
+  }
+  out+=`</svg>`; return out;
+}
+function sensChart(rows){
+  const W=350,H=150,pl=30,pr=30,pt=12,pb=20;
+  const trs=rows.map(r=>r.tr), tmin=Math.min(...trs,0),tmax=Math.max(...trs,0);
+  const cs=rows.map(r=>r.clean), cmin=Math.min(...cs),cmax=Math.max(...cs);
+  const bw=(W-pl-pr)/rows.length;
+  const zero=pt+(H-pt-pb)*(1-(0-tmin)/((tmax-tmin)||1));
+  const yT=v=> pt+(H-pt-pb)*(1-(v-tmin)/((tmax-tmin)||1));
+  const yC=v=> pt+(H-pt-pb)*(1-(v-cmin)/((cmax-cmin)||1));
+  let out=`<svg viewBox="0 0 ${W} ${H}">`;
+  out+=`<line x1="${pl}" y1="${zero}" x2="${W-pr}" y2="${zero}" stroke="var(--line)"/>`;
+  rows.forEach((r,i)=>{ const x=pl+bw*i+bw*0.2, top=Math.min(yT(r.tr),zero), h=Math.abs(yT(r.tr)-zero);
+    out+=`<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${(bw*0.6).toFixed(1)}" height="${Math.max(1,h).toFixed(1)}" fill="${r.bp===0?'var(--gold)':'#c9a22799'}"/>`;
+    out+=`<text x="${(x+bw*0.3).toFixed(1)}" y="${H-6}" font-size="7" fill="var(--faint)" text-anchor="middle">${r.bp>0?"+":""}${r.bp}</text>`; });
+  const dC=rows.map((r,i)=>`${i?"L":"M"}${(pl+bw*i+bw*0.5).toFixed(1)},${yC(r.clean).toFixed(1)}`).join("");
+  out+=`<path d="${dC}" fill="none" stroke="var(--down)" stroke-width="1.5"/>`;
+  out+=`</svg>`; return out;
+}
+
+/* ============================================================
+   화면 렌더러
+   ============================================================ */
+function scr_issue(){
+  const t=TERMS[state.bondId], m=MASTERS.find(x=>x.id===state.bondId);
+  const obs=observations(state.bondId,420), latest=obs[obs.length-1];
+  const y=latest.yield, p=priceBond(t,AS_OF,y), sc=schedule(t);
+  const nextPay=sc.find(c=>c.date>AS_OF);
+  const star=state.watched[state.bondId]?"★":"☆";
+  return `
+  <div class="stack">
+    <div class="card idcard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><h3>${m.name}</h3>
+          <div class="idmeta"><span>${m.isin}</span><span>${t.typeLabel}</span><span>신용등급 ${m.rating}</span></div>
+        </div>
+        <button class="star" onclick="toggleWatch()">${star}</button>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px;align-items:center">${badge("mtm")}${badge("MOCK")}<span class="note" style="margin:0">기준 ${latest.date}</span></div>
+    </div>
+    <div class="grid2">
+      <div class="stat"><div class="l">최근 시가평가수익률</div><div class="v big gold tnum">${fY(y)}</div><div class="s">시가평가</div></div>
+      <div class="stat"><div class="l">10,000원당 평가단가</div><div class="v big tnum">${fP(p.clean)}</div><div class="s">Dirty ${fP(p.dirty)}</div></div>
+      <div class="stat"><div class="l">잔존만기</div><div class="v tnum">${fRem(p.remainingDays)}</div><div class="s">만기 ${t.maturityDate}</div></div>
+      <div class="stat"><div class="l">다음 이자지급일</div><div class="v tnum">${nextPay?nextPay.date:"—"}</div><div class="s">${t.pay==="만기일시"?"만기일시":"연 "+t.couponFrequency+"회"}</div></div>
+    </div>
+    <details class="acc" open><summary>발행조건</summary><div class="body">
+      ${kv("발행기관",t.issuer)}${kv("발행일",t.issueDate)}${kv("만기일",t.maturityDate)}${kv("통화",t.currency)}${kv("기준 액면","10,000원")}${kv("종목코드",m.code)}
+    </div></details>
+    <details class="acc"><summary>금리조건</summary><div class="body">
+      ${kv("표면금리",t.couponRate!=null?t.couponRate+"%":"—(할인채)")}${kv("발행수익률",t.issueYield+"%")}${kv("금리유형",t.typeLabel)}${kv("지급주기","연 "+t.couponFrequency+"회")}${kv("이자계산방식",t.dayCount)}${kv("선·후급",t.pay)}
+    </div></details>
+    <details class="acc"><summary>상환조건</summary><div class="body">
+      ${kv("상환방법",t.redemptionType==="BULLET"?"만기일시상환":"분할상환")}${kv("상환율",t.redemptionRate+"%")}
+    </div></details>
+    <details class="acc"><summary>현금흐름 <span class="note" style="margin:0">${sc.length}건</span></summary><div class="body" style="overflow-x:auto">
+      <table class="data"><thead><tr><th>지급일</th><th>이자</th><th>원금</th><th>합계</th></tr></thead><tbody>
+      ${sc.slice(0,8).map(c=>`<tr><td>${c.date}</td><td class="tnum">${fP(c.interest,2)}</td><td class="tnum">${fP(c.principal,0)}</td><td class="tnum">${fP(c.interest+c.principal,2)}</td></tr>`).join("")}
+      ${sc.length>8?`<tr><td colspan="4" class="note" style="text-align:center">…외 ${sc.length-8}건</td></tr>`:""}
+      </tbody></table>
+    </div></details>
+    <details class="acc"><summary>평가정보</summary><div class="body">
+      ${kv("최근 시가평가일",latest.date)}${kv("평가수익률",fY(y))}${kv("평가가격(Clean)",fP(p.clean))}${kv("경과이자",fP(p.accrued,2))}
+      <div class="note" style="text-align:left;margin-top:6px">적용규칙: DayCount=${t.dayCount} · f=${t.couponFrequency} · P=ΣCF/(1+y/f)^(f·t) · 세전단가 절사 truncate@1</div>
+    </div></details>
+    <div class="btnrow">
+      <button class="btn" onclick="go('distribution')">유통정보 보기</button>
+      <button class="btn primary" onclick="go('simulation')">이 채권으로 계산</button>
+    </div>
+    <div class="note">데이터 출처: SEIBro(기본)·KOFIA·KRX · 현재 Mock 모드</div>
+  </div>`;
+}
+function kv(k,v){ return `<div class="kv"><span class="k">${k}</span><span class="v tnum">${v}</span></div>`; }
+
+function scr_distribution(){
+  const t=TERMS[state.bondId], m=MASTERS.find(x=>x.id===state.bondId);
+  const obs=observations(state.bondId,state.period);
+  const picked=obs[obs.length-1];
+  const periods=[[30,"1M"],[90,"3M"],[180,"6M"],[365,"1Y"],[900,"전체"]];
+  return `
+  <div class="stack">
+    <div class="card"><h3 style="margin:0;font-size:14px">${m.name}</h3><div class="note" style="text-align:left;margin-top:2px">일별 유통·평가 수익률과 가격</div></div>
+    <div class="seg">${periods.map(([d,l])=>`<button class="${state.period===d?'on':''}" onclick="setPeriod(${d})">${l}</button>`).join("")}</div>
+    <div class="card" style="padding:8px">${lineChart(obs)}
+      <div class="note" style="display:flex;gap:10px;justify-content:center;margin-top:4px"><span style="color:var(--up)">— 수익률</span><span style="color:var(--down)">— 가격</span><span>▏거래량</span></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <b style="font-size:13px">${picked.date}</b><span style="display:flex;gap:5px">${badge(picked.vol?"actual":"mtm")}${badge("MOCK")}</span>
+      </div>
+      ${kv("시가평가수익률",fY(picked.yield))}${kv("평가가격(Clean)",fP(picked.clean))}
+      ${kv("거래수익률",picked.vol?fY(picked.yield):"—")}${kv("거래량(액면)",fM(picked.vol))}${kv("데이터 상태","VALID")}
+      <button class="btn primary" style="width:100%;margin-top:8px" onclick="go('simulation')">이 수익률로 계산</button>
+    </div>
+    <div class="note">결측(주말·휴장)은 연결선으로 임의 보간하지 않습니다. 대체값 사용 시 화면에 명시합니다.</div>
+  </div>`;
+}
+
+function scr_curve(){
+  const cur=curve(state.curveId,0);
+  const modes=[["current","현재"],["compare","두 날짜"],["change","변동폭bp"],["spread","국채대비"]];
+  let series=[{name:"현재",color:"var(--gold)",pts:cur}];
+  let yLabel="수익률(%)";
+  if(state.curveMode==="compare"){ const cmp=curve(state.curveId,state.curveCompare); series.push({name:"비교",color:"var(--muted)",dash:true,pts:cmp}); }
+  else if(state.curveMode==="change"){ const cmp=curve(state.curveId,state.curveCompare);
+    series=[{name:"변동 bp",color:"var(--up)",pts:cur.map((p,i)=>({...p,yield:(p.yield!=null&&cmp[i].yield!=null)?Number(((p.yield-cmp[i].yield)*100).toFixed(1)):null}))}]; yLabel="bp"; }
+  else if(state.curveMode==="spread"){ const gov=curve("GOVERNMENT",0);
+    series=[{name:"국채대비 스프레드 bp",color:"var(--down)",pts:cur.map((p,i)=>({...p,yield:(p.yield!=null&&gov[i].yield!=null)?Number(((p.yield-gov[i].yield)*100).toFixed(1)):null}))}]; yLabel="bp"; }
+  const cmpOpts=[[7,"1주"],[30,"1개월"],[90,"3개월"],[180,"6개월"],[365,"1년"]];
+  return `
+  <div class="stack">
+    <div class="card"><div class="note" style="text-align:left;margin-bottom:4px">채권종류 · 등급</div>
+      <select onchange="setCurve(this.value)" style="width:100%;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--chip);color:var(--text);padding:0 8px;font-size:13px">
+        ${Object.entries(CURVES).map(([id,c])=>`<option value="${id}" ${state.curveId===id?"selected":""}>${c.label}</option>`).join("")}
+      </select></div>
+    <div class="seg">${modes.map(([k,l])=>`<button class="${state.curveMode===k?'on':''}" onclick="setCurveMode('${k}')">${l}</button>`).join("")}</div>
+    ${(state.curveMode==="compare"||state.curveMode==="change")?`<div class="pill-row">${cmpOpts.map(([d,l])=>`<button class="badge ${state.curveCompare===d?'b-mtm':'b-src'}" style="cursor:pointer;padding:5px 9px" onclick="setCurveCmp(${d})">${l} 전</button>`).join("")}</div>`:""}
+    <div class="card" style="padding:8px">${curveChart(series)}
+      <div class="note" style="display:flex;gap:10px;justify-content:center;margin-top:2px"><span>● 관측</span><span>○ 보간</span><span>— 없음</span><span style="margin-left:auto">${yLabel}</span></div>
+    </div>
+    <div class="note">만기점을 탭하면 시가평가표로 연동됩니다. 관측점과 보간점을 다른 마커로 구분합니다.</div>
+  </div>`;
+}
+
+function scr_mtm(){
+  const g=mtm();
+  const head=`<tr><th class="corner">종류 \\ 만기</th>${MTM_T.map(t=>`<th>${t.l}</th>`).join("")}</tr>`;
+  const body=MTM_ROWS.map(r=>{
+    const cells=MTM_T.map(tn=>{ const c=g[r.k][tn.l];
+      if(c.miss) return `<td><span class="miss">—</span></td>`;
+      if(state.mtmBp) return `<td><span class="${c.bp>0?'bp-up':c.bp<0?'bp-dn':''} tnum">${fBp(c.bp)}</span></td>`;
+      return `<td class="tnum">${fY(c.yield)}</td>`; }).join("");
+    return `<tr><th>${r.l}</th>${cells}</tr>`;
+  }).join("");
+  return `
+  <div class="stack">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b style="font-size:14px">시가평가표</b>
+      <button class="badge b-src" style="padding:6px 10px;cursor:pointer" onclick="toggleMtm()">${state.mtmBp?"수익률 보기":"전일대비 보기"}</button>
+    </div>
+    <div class="mtmwrap"><table class="mtm"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    <div class="pill-row" style="font-size:9.5px">${badge("quote")}${badge("mtm")}${badge("actual")}${badge("interp")}</div>
+    <div class="note" style="text-align:left">헤더(상단)와 첫 열(좌측)이 고정됩니다 · 가로·세로 스크롤 · 결측은 — · 통안채 30Y 결측(MISSING)</div>
+    <div class="btnrow">
+      <button class="btn" onclick="go('curve')">수익률곡선 비교</button>
+      <button class="btn primary" onclick="go('simulation')">시뮬레이션 전달</button>
+    </div>
+  </div>`;
+}
+
+function scr_simulation(){
+  const t=TERMS[state.bondId], m=MASTERS.find(x=>x.id===state.bondId);
+  const aY=t.issueYield||t.couponRate||3;
+  if(state.simB==null) state.simB=aY;
+  const aDate=AS_OF; const bDate=(function(){ const d=new Date(pd(AS_OF)); d.setUTCFullYear(d.getUTCFullYear()+1); return d.toISOString().slice(0,10); })();
+  const qty=100, taxRate=15.4;
+  const r=simulate(t,aDate,aY,bDate,state.simB,qty,taxRate);
+  const sens=sensitivity(t,aDate,aY,bDate,state.simB,qty,taxRate);
+  return `
+  <div class="stack">
+    <div class="card"><div class="note" style="text-align:left;margin-bottom:4px">종목</div>
+      <select onchange="setBond(this.value)" style="width:100%;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--chip);color:var(--text);padding:0 8px;font-size:13px">
+        ${MASTERS.map(x=>`<option value="${x.id}" ${state.bondId===x.id?"selected":""}>${x.name}</option>`).join("")}
+      </select>
+      <div class="note" style="text-align:left;margin-top:4px">전달됨: ${m.cat} · 수익률출처 시가평가 · A수익률 ${fY(aY)}</div>
+    </div>
+    <div class="grid2">
+      <div class="stat"><div class="l">A (취득/현재)</div><div class="v tnum" style="font-size:14px">${aDate}</div><div class="s">수익률 ${fY(aY)} · 100좌</div></div>
+      <div class="stat" style="border-color:var(--gold)"><div class="l">B (처분/평가)</div><div class="v tnum" style="font-size:14px">${bDate}</div><div class="s">수익률 ${fY(state.simB)}</div></div>
+    </div>
+    <div class="card">
+      <div class="note" style="text-align:left;display:flex;justify-content:space-between"><span>B 예상 시장수익률</span><b class="tnum" style="color:var(--gold)">${fY(state.simB)}</b></div>
+      <input type="range" min="${(aY-2).toFixed(1)}" max="${(aY+2).toFixed(1)}" step="0.05" value="${state.simB}" oninput="setSimB(this.value)"/>
+      <div class="note" style="display:flex;justify-content:space-between"><span>-200bp</span><span>기준 ${fY(aY)}</span><span>+200bp</span></div>
+    </div>
+    <div class="grid2">
+      <div class="stat"><div class="l">초기투자금액</div><div class="v tnum" style="font-size:15px">${fM(r.invest)}</div><div class="s">A Dirty×수량</div></div>
+      <div class="stat"><div class="l">총수익</div><div class="v big tnum ${r.profit>=0?'up':'down'}">${fM(r.profit)}</div><div class="s">Income+Capital−세</div></div>
+      <div class="stat"><div class="l">Income Gain</div><div class="v tnum">${fM(r.income)}</div><div class="s">수취이자·상환</div></div>
+      <div class="stat"><div class="l">Capital Gain</div><div class="v tnum">${fM(r.capital)}</div><div class="s">B−A Clean</div></div>
+      <div class="stat"><div class="l">TR</div><div class="v tnum gold">${(r.tr*100).toFixed(3)}%</div><div class="s">보유 ${r.hold}일</div></div>
+      <div class="stat"><div class="l">CAGR</div><div class="v tnum gold">${(r.cagr*100).toFixed(3)}%</div><div class="s">연환산 복리</div></div>
+    </div>
+    <div class="card">
+      <div class="note" style="text-align:left;margin-bottom:4px"><b>민감도 −100bp ~ +100bp</b> (예상세액 세율 15.4% 사용자 설정)</div>
+      ${sensChart(sens)}
+      <div style="overflow-x:auto;margin-top:6px"><table class="data">
+        <thead><tr><th>시나리오</th><th>B수익률</th><th>단가</th><th>Capital</th><th>TR%</th><th>CAGR%</th></tr></thead>
+        <tbody>${sens.map(s=>`<tr style="${s.bp===0?'background:var(--amber-bg)':''}"><td>${s.bp>0?"+":""}${s.bp}bp</td><td class="tnum">${s.y.toFixed(3)}</td><td class="tnum">${fP(s.clean)}</td><td class="tnum">${fM(s.capital)}</td><td class="tnum">${s.tr.toFixed(3)}</td><td class="tnum">${s.cagr.toFixed(3)}</td></tr>`).join("")}</tbody>
+      </table></div>
+    </div>
+    <details class="acc"><summary>현금흐름 · 할인과정 (A시점)</summary><div class="body" style="overflow-x:auto">
+      <table class="data"><thead><tr><th>지급일</th><th>원리금</th><th>잔존연</th><th>할인계수</th><th>현가</th></tr></thead><tbody>
+      ${r.A.cfs.slice(0,8).map(c=>`<tr><td>${c.date}</td><td class="tnum">${fP(c.total,2)}</td><td class="tnum">${c.t.toFixed(3)}</td><td class="tnum">${c.df.toFixed(5)}</td><td class="tnum">${fP(c.pv,2)}</td></tr>`).join("")}
+      </tbody></table>
+      <div class="grid2" style="margin-top:6px">${kv("A Clean",fP(r.A.clean))}${kv("B Clean",fP(r.B.clean))}${kv("A Dirty",fP(r.A.dirty))}${kv("B Dirty",fP(r.B.dirty))}${kv("A 경과이자",fP(r.A.accrued,2))}${kv("B 경과이자",fP(r.B.accrued,2))}</div>
+    </div></details>
+    <div class="note">세법은 자동 판정하지 않습니다. 세율·과세대상은 사용자 설정값(localStorage jbond.tax.v1)이며 재실행 시 복원됩니다.</div>
+  </div>`;
+}
+
+/* ============================================================
+   내비게이션 & 이벤트
+   ============================================================ */
+const SCREENS=[
+  {k:"issue",label:"발행",title:"발행정보",ic:"📄",fn:scr_issue},
+  {k:"curve",label:"곡선",title:"수익률곡선",ic:"📈",fn:scr_curve},
+  {k:"distribution",label:"유통",title:"유통정보",ic:"🔁",fn:scr_distribution},
+  {k:"simulation",label:"투자",title:"투자 시뮬레이션",ic:"🧮",fn:scr_simulation},
+  {k:"mtm",label:"시가표",title:"시가평가표",ic:"🗂️",fn:scr_mtm},
+];
+function render(){
+  const s=SCREENS.find(x=>x.k===state.screen);
+  document.getElementById("viewport").innerHTML=s.fn();
+  document.getElementById("viewport").scrollTop=0;
+  document.getElementById("tbTitle").textContent=s.title;
+  document.getElementById("bottomnav").innerHTML=SCREENS.map(x=>`<button class="${x.k===state.screen?'on':''}" onclick="go('${x.k}')"><span class="ic">${x.ic}</span>${x.label}</button>`).join("");
+  document.getElementById("screenTabs").innerHTML=SCREENS.map(x=>`<button class="${x.k===state.screen?'on':''}" onclick="go('${x.k}')">${x.title}</button>`).join("");
+}
+function go(k){ state.screen=k; render(); }
+function setPeriod(d){ state.period=d; render(); }
+function setCurve(v){ state.curveId=v; render(); }
+function setCurveMode(k){ state.curveMode=k; render(); }
+function setCurveCmp(d){ state.curveCompare=d; render(); }
+function toggleMtm(){ state.mtmBp=!state.mtmBp; render(); }
+function setBond(id){ state.bondId=id; state.simB=null; render(); }
+function setSimB(v){ state.simB=Number(v); render(); }
+function toggleWatch(){ state.watched[state.bondId]=!state.watched[state.bondId]; render(); }
+window.go=go;window.setPeriod=setPeriod;window.setCurve=setCurve;window.setCurveMode=setCurveMode;window.setCurveCmp=setCurveCmp;window.toggleMtm=toggleMtm;window.setBond=setBond;window.setSimB=setSimB;window.toggleWatch=toggleWatch;
+
+// theme toggle
+document.getElementById("themeBtn").onclick=function(){
+  const root=document.documentElement;
+  const cur=root.getAttribute("data-theme")|| (window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  root.setAttribute("data-theme", cur==="dark"?"light":"dark");
+};
+render();
+</script>
+</body>
+</html>

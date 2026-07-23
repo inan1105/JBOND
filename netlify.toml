@@ -1,0 +1,14 @@
+# Netlify 배포 (웹앱 정적 PWA)
+[build]
+  command = "npm install --no-audit --no-fund && npm run build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_BASE = "/"
+
+# SPA(react-router BrowserRouter) — 모든 경로를 index.html 로
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,0 +1,49 @@
+name: Deploy Web (GitHub Pages)
+
+# 웹앱(모바일 PWA)을 GitHub Pages 로 배포한다.
+# 커스텀 도메인(jbond.iamchart.co.kr) 사용 시 base='/' 유지.
+# 프로젝트 경로(user.github.io/<repo>) 사용 시 VITE_BASE 를 '/<repo>/' 로 설정.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Build web
+        env:
+          VITE_BASE: ${{ vars.VITE_BASE || '/' }}
+        run: npm run build
+      - name: SPA fallback (404 → index)
+        run: cp apps/web/dist/index.html apps/web/dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

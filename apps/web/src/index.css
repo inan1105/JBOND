@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #eef1f6;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo', 'Noto Sans KR',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* 시가평가표 sticky 교차셀 레이어 규칙 */
+.mtm-corner {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 30;
+}
+.mtm-col-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.mtm-row-head {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}

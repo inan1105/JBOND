@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { MtmRate, TenorLabel } from '@jbond/shared-types';
 import { Skeleton, BottomSheet, ValueTypeBadge, formatYield, formatBp } from '@jbond/ui';

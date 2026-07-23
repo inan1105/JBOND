@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import type { BondTerms } from '@jbond/shared-types';
 import { simulate, sensitivity, type EngineBondType, type SimInput, type TaxBase } from '@jbond/bond-engine';

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { YieldCurvePoint } from '@jbond/shared-types';
 import { Skeleton } from '@jbond/ui';

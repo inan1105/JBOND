@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { BondMaster } from '@jbond/shared-types';
 import { Skeleton, EmptyState } from '@jbond/ui';
 import { dataService } from '../data/service.js';

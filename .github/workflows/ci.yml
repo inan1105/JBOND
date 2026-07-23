@@ -26,8 +26,9 @@ jobs:
       - name: Build (typecheck + Vite PWA)
         run: npm run build
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        # mobile-390 프로젝트가 iPhone 12(WebKit)를 사용하므로 chromium+webkit 모두 필요
+        run: npx playwright install --with-deps chromium webkit
 
       - name: E2E (Playwright)
         run: npm run test:e2e

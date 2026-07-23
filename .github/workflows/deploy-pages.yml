@@ -22,12 +22,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - name: Build web
         # 프로젝트 경로 배포: https://inan1105.github.io/JBOND/  → base '/JBOND/'
         # 커스텀 도메인 루트 사용 시 저장소 변수 VITE_BASE='/' 로 덮어쓰기
